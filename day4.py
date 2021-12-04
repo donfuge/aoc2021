@@ -1,4 +1,4 @@
-#%% part 1
+#%%
 import numpy as np
 
 data_file = "day4_input.txt"
@@ -42,8 +42,3 @@ for num in draws:
                 print((np.sum(data[ticket_idx, hits[ticket_idx,:,:]==0]))*num)
                 all_found = True
                 break
-
-
-
-
-# %%
