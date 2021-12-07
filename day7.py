@@ -15,7 +15,7 @@ def part1(positions):
 
     return(fuel_min)
 
-def fuel_to_distance(distance):
+def distance_to_fuel(distance):
     return (1 + distance)/2 * distance
 
 def part2(positions):
@@ -24,7 +24,7 @@ def part2(positions):
     x0 = np.arange(x_min, x_max + 1) # possible centers
 
     distances = np.abs(np.tile(positions, (len(x0),1)) - np.tile(x0, (len(positions),1)).T)
-    fuels = np.sum(fuel_to_distance(distances), axis=1)
+    fuels = np.sum(distance_to_fuel(distances), axis=1)
     fuel_min = np.min(fuels)    
 
     return(fuel_min)
