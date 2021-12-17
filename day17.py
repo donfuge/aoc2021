@@ -1,5 +1,4 @@
 import numpy as np
-from collections import Counter
 import re
 
 def preprocess(filename):
@@ -15,9 +14,6 @@ def preprocess(filename):
 def solve(data):
 
     xrange, yrange = data
- 
-    max_steps = 100
-    step = 0
 
     # velocities to try
     x_velocities = np.arange(1,400)
@@ -30,7 +26,6 @@ def solve(data):
             y_max = 0
             x_pos = 0
             y_pos = 0
-            step = 0
             x_vel = x_vel_start
             y_vel = y_vel_start
             while (x_pos not in xrange or y_pos not in yrange) and x_pos < max(xrange) and y_pos > min(yrange):
@@ -46,9 +41,6 @@ def solve(data):
     results.sort(key = lambda x: x[-1]) 
     best = results[-1]
     return len(results), best[-1] 
-
-def part2(data):
-    return 
 
 if __name__ == "__main__":
 
