@@ -37,7 +37,7 @@ class Node:
       return self.f > other.f
 
     def __hash__(self):
-        return hash(repr(self))
+        return hash(self.position)
 
 def return_path(current_node):
     path = []
@@ -66,15 +66,11 @@ def astar(maze, start, end):
 
     # Initialize both open and closed list
     open_list = []
-    closed_list = []
+    closed_list = set()
 
     # Heapify the open_list and Add the start node
     heapq.heapify(open_list) 
     heapq.heappush(open_list, start_node)
-
-    # Adding a stop condition
-    outer_iterations = 0
-    max_iterations = (len(maze[0]) * len(maze) // 2)
 
     # what squares do we search
     adjacent_squares = ((0, -1), (0, 1), (-1, 0), (1, 0),)
@@ -91,7 +87,7 @@ def astar(maze, start, end):
         
         # Get the current node
         current_node = heapq.heappop(open_list)
-        closed_list.append(current_node)
+        closed_list.add(current_node)
 
         # Found the goal
         if current_node == end_node:
