@@ -109,6 +109,7 @@ def astar(maze, start, end):
             new_node = Node(current_node, node_position)
 
             if new_node not in closed_list and new_node not in open_list:
+            # if new_node not in open_list:
                 # Append
                 children.append(new_node)
 
@@ -133,10 +134,43 @@ def visualize_path(map, path):
         total_risk += map[coords[0],coords[1]]
         path_map[coords[0],coords[1]] = total_risk
     print(path_map)
+    np.savetxt("part2.txt", path_map )
 
     return
 
 def part1(map):
+    rows, cols = map.shape
+    start = (0, 0)
+    end = (rows - 1, cols - 1)
+    start_time = time.time()
+    risk, path = astar(map, start, end)
+    end_time = time.time()
+    print(end_time - start_time)
+    visualize_path(map, path)
+    return risk
+
+def compare_maps(map, filename):
+    extended_map = preprocess(filename)
+    return np.all(map == extended_map)
+
+def extend_map(map):
+    extended_1 = np.concatenate((map, shift_map(1, map), shift_map(2, map), shift_map(3, map), shift_map(4, map)), axis=1)
+    extended_2 = np.concatenate((shift_map(1, map), shift_map(2, map), shift_map(3, map), shift_map(4, map), shift_map(5, map)), axis=1)
+    extended_3 = np.concatenate((shift_map(2, map), shift_map(3, map), shift_map(4, map), shift_map(5, map), shift_map(6, map)), axis=1)
+    extended_4 = np.concatenate((shift_map(3, map), shift_map(4, map), shift_map(5, map), shift_map(6, map), shift_map(7, map)), axis=1)
+    extended_5 = np.concatenate((shift_map(4, map), shift_map(5, map), shift_map(6, map), shift_map(7, map), shift_map(8, map)), axis=1)
+    extended_map = np.concatenate((extended_1, extended_2, extended_3, extended_4, extended_5), axis=0)
+    return extended_map
+
+def shift_map(shift, map):
+    new_map = np.copy(map)
+    new_map += shift
+    new_map = (new_map-1) % 9 + 1
+    return new_map
+
+def part2(map):
+    map = extend_map(np.copy(map))
+
     rows, cols = map.shape
     start = (0, 0)
     end = (rows - 1, cols - 1)
@@ -155,13 +189,15 @@ if __name__ == "__main__":
     print(f"Part 1 solution for example data: {part1_example_sol}")
     assert part1_example_sol == 40
 
-    # part2_example_sol = part2(test_input)
-    # print(f"Part 2 solution for example data: {part2_example_sol}")
-    # assert part2_example_sol == 2188189693529
+    assert compare_maps(extend_map(test_input), "day15_example_ext.txt")
 
-    input = preprocess("day15_input.txt")
-    part1_sol = part1(input)
+    part2_example_sol = part2(test_input)
+    print(f"Part 2 solution for example data: {part2_example_sol}")
+    assert part2_example_sol == 315
+
+    problem_input = preprocess("day15_input.txt")
+    part1_sol = part1(problem_input)
     print(f"Part 1 solution: {part1_sol}")
 
-    # part2_sol = part2(input)
-    # print(f"Part 2 solution: {part2_sol}")
+    part2_sol = part2(problem_input)
+    print(f"Part 2 solution: {part2_sol}")
