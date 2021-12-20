@@ -3,129 +3,86 @@ import heapq
 import time
 
 # A* implementation adapted from https://gist.github.com/ryancollingwood/32446307e976a11a1185a5394d6657bc
+# and https://github.com/Chrisbelefantis/A-Star-Algorithm/blob/master/Astar-Algorithm.py
 
 def preprocess(filename):
     map = np.genfromtxt(filename, delimiter=1, dtype=np.uint)
     return map
 
+def manhattan(x1,x2,y1,y2):
+    return np.abs(x1-x2) + np.abs(y1-y2)
 
-class Node:
-    """
-    A node class for A* Pathfinding
-    """
+def geth(map):
+    rows, cols = map.shape
 
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
+    h = np.zeros_like(map, dtype=np.uint)
 
-        self.g = 0
-        self.h = 0
-        self.f = 0
+    for row in range(rows):
+        for col in range(cols):
+            h[row,col] = manhattan(row, rows-1, col, cols-1)
+            
+    return h
 
-    def __eq__(self, other):
-        return self.position == other.position
-    
-    def __repr__(self):
-      return f"{self.position} - g: {self.g} h: {self.h} f: {self.f}"
+def get_reversed_path(start, position, came_from, g_score):
 
-    # defining less than for purposes of heap queue
-    def __lt__(self, other):
-      return self.f < other.f
-    
-    # defining greater than for purposes of heap queue
-    def __gt__(self, other):
-      return self.f > other.f
+    total_path = []
+    x, y = position
+    score = g_score[x, y]
+    while (x,y) != start:
+        total_path.append((x,y))
+        x, y = came_from[x][y]
 
-    def __hash__(self):
-        return hash(self.position)
+    score -= g_score[start[0], start[1]]
+    return score, total_path[::-1]
 
-def return_path(current_node):
-    path = []
-    current = current_node
-    while current is not None:
-        path.append(current.position)
-        current = current.parent
-    return current_node.g, path[::-1]  # Return reversed path
+def astar(map, start, end):
+    rows, cols = map.shape
+    g_score = np.inf * np.ones_like(map, dtype=np.uint)
+    f_score = np.inf * np.ones_like(map, dtype=np.uint)
+    h_score = geth(map)
+    came_from = np.empty(shape=(rows,cols), dtype="i,i")
 
+    g_score[start[0], start[1]] = map[start[0], start[1]]
+    f_score[start[0], start[1]] = g_score[start[0], start[1]] + h_score[start[0], start[1]]
 
-def astar(maze, start, end):
-    """
-    Returns a list of tuples as a path from the given start to the given end in the given maze
-    :param maze:
-    :param start:
-    :param end:
-    :return:
-    """
-
-    rows, cols = maze.shape
-    # Create start and end node
-    start_node = Node(None, start)
-    start_node.g = start_node.h = start_node.f = 0
-    end_node = Node(None, end)
-    end_node.g = end_node.h = end_node.f = 0
-
-    # Initialize both open and closed list
     open_list = []
-    closed_list = set()
 
-    # Heapify the open_list and Add the start node
     heapq.heapify(open_list) 
-    heapq.heappush(open_list, start_node)
+    heapq.heappush(open_list, (f_score[start[0], start[1]], start[0], start[1]))
 
-    # what squares do we search
-    adjacent_squares = ((0, -1), (0, 1), (-1, 0), (1, 0),)
+    deltas = ((0, -1), (0, 1), (-1, 0), (1, 0),)
 
-    # Loop until you find the end
     while len(open_list) > 0:
-        # outer_iterations += 1
 
-        # if outer_iterations > max_iterations:
-          # if we hit this point return the path such as it is
-          # it will not contain the destination
-        #   warn("giving up on pathfinding too many iterations")
-        #   return return_path(current_node)       
-        
-        # Get the current node
+        # get the best node
         current_node = heapq.heappop(open_list)
-        closed_list.add(current_node)
+        f, current_x, current_y = current_node
 
-        # Found the goal
-        if current_node == end_node:
-            return return_path(current_node)
+        # check if goal is found
+        if (current_x, current_y) == end:
+            return get_reversed_path(start, (current_x, current_y) , came_from, g_score)
 
-        # Generate children
-        children = []
-        
-        for new_position in adjacent_squares: # Adjacent squares
+        for delta in deltas: 
 
-            # Get node position
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+            # adjacent new position
+            x, y = (current_x + delta[0], current_y + delta[1])
 
-            # Make sure within range
-            if node_position[0] > (rows - 1) or node_position[0] < 0 or node_position[1] > (cols - 1) or node_position[1] < 0:
+            # check if inside range
+            if x > (rows - 1) or x < 0 or y > (cols - 1) or y < 0:
                 continue
 
-            # Create new node
-            new_node = Node(current_node, node_position)
+            tentative_g = g_score[current_x, current_y] + map[x, y]
 
-            if new_node not in closed_list and new_node not in open_list:
-            # if new_node not in open_list:
-                # Append
-                children.append(new_node)
+            if tentative_g < g_score[x, y] :
+                came_from[x, y] = (current_x, current_y)
+                g_score[x, y] = tentative_g
+                f_score[x, y] = g_score[x, y] + h_score[x, y]
 
-        # Loop through children
-        for child in children:
+                if (f_score[x, y], x, y) not in open_list:
+                    heapq.heappush(open_list, (f_score[x, y], x, y))
 
-            # Create the f, g, and h values
-            child.g = current_node.g + maze[child.position[0],child.position[1]]
-            child.h = ((child.position[0] - end_node.position[0])  + (child.position[1] - end_node.position[1]) )
-            child.f = child.g + child.h
-
-            # Add the child to the open list
-            heapq.heappush(open_list, child)
-
-    warn("Couldn't get a path to destination")
-    return None
+    print("could not find the goal")
+    return
 
 def visualize_path(map, path):
     path_map = np.zeros_like(map)
@@ -134,8 +91,6 @@ def visualize_path(map, path):
         total_risk += map[coords[0],coords[1]]
         path_map[coords[0],coords[1]] = total_risk
     print(path_map)
-    np.savetxt("part2.txt", path_map )
-
     return
 
 def part1(map):
@@ -152,6 +107,8 @@ def part1(map):
 def compare_maps(map, filename):
     extended_map = preprocess(filename)
     return np.all(map == extended_map)
+
+# ugly, but works :)
 
 def extend_map(map):
     extended_1 = np.concatenate((map, shift_map(1, map), shift_map(2, map), shift_map(3, map), shift_map(4, map)), axis=1)
